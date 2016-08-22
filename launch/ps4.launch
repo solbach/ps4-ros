@@ -1,0 +1,19 @@
+<launch>
+	
+  	<!-- ds4drv -->
+  	<node name="ds4drv_script_call" pkg="ps4_ros" type="run_ds4drv.sh" />
+
+  	<!-- JOY ROS NODE -->
+	<node pkg="joy" type="joy_node" name="joy">
+		<param name="joy_node/dev" value="/dev/input/js0"/>
+	</node>
+
+	<!-- PS4 ROS NODE -->
+	<node pkg="ps4_ros" type="ps4_ros" name="ps4">
+	  	<param name="scale_angular" value="1.5"/>
+	  	<param name="scale_linear" value="0.5"/>
+	</node>
+
+</launch>
+
+
