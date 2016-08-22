@@ -20,6 +20,11 @@ public:
         this->chat = n.advertise<geometry_msgs::Twist>(pubName, 1000);
         this->sub = n.subscribe<sensor_msgs::Joy>("/joy", 10, &PS4_ROS::subscribePS4, this);
 
+        /* set calibration counter to zero */
+        this->calib1 = 0;
+        this->calib2 = 0;
+        this->calib = false;
+
         // get ros param
         ros::NodeHandle private_nh("~");
         private_nh.param("scale_linear", this->scale_linear, 1.0);
@@ -27,7 +32,6 @@ public:
 
         ROS_INFO("scale_linear set to: %f", this->scale_linear);
         ROS_INFO("scale_angular set to: %f", this->scale_angular);
-
         ROS_INFO("PS4_ROS initialized");
     }
 
@@ -36,7 +40,9 @@ public:
     }
 
     void run() {
-        this->publishTwistMsg();
+        if(this->calib) {
+            this->publishTwistMsg();
+        }
     }
 
     void prepareData()
@@ -106,6 +112,40 @@ public:
 
     }
 
+    bool calibrate()
+    {
+        double progress = ((double) this->calib1 / this->calib_duration) * 100;
+        if( (this->l2 == -1.0) && (this->r2 == -1.0) )
+        {
+            ROS_WARN("Press L2 and R2 to calibrate: %i%% ", (int) progress);
+            this->calib1++;
+            this->calib2++;
+        }
+        else{
+            this->calib1 = 0;
+            this->calib2 = 0;
+        }
+
+        if( (this->calib1 > this->calib_duration) && (this->calib2 > this->calib_duration))
+        {
+            this->calib = true;
+            return true;
+        }
+        else
+            return false;
+    }
+
+    bool waitForRelease()
+    {
+        if( (this->l2 == 1.0) && (this->r2 == 1.0) )
+        {
+            return true;
+        }
+        else{
+            return false;
+        }
+    }
+
     void printSend()
     {
 
@@ -141,6 +181,11 @@ private:
     ros::Publisher chat;
     ros::Subscriber sub;
 
+    /* calibration variables */
+    int calib_duration = 20; // 1/10 sec
+    int calib1, calib2;
+    bool calib;
+
     /* raw data */
     double leftStickY, leftStickX, rightStickY, rightStickX, l2, r2;
     int arrowsX, arrowsY, buttonSq, buttonX, buttonO, buttonTr,
@@ -152,10 +197,7 @@ private:
     /* send data */
     double send_leftStickX, send_l2, send_r2;
 
-    int counter = 0;
 };
-
-
 
 int main(int argc, char **argv) {
 	ros::init(argc, argv, "PS4_ROS");
@@ -165,6 +207,25 @@ int main(int argc, char **argv) {
     PS4_ROS *ps4_ros = new PS4_ROS(n);
 
     // calibrate
+    ROS_WARN("Press L2 and R2 to calibrate");
+    bool ready = false;
+    while(!ready)
+    {
+        ready = ps4_ros->calibrate();
+        ros::spinOnce();
+        ros::Duration(0.1).sleep();
+    }
+
+    ROS_WARN("Release L2 and R2");
+    ros::Duration(2.0).sleep();
+    ready = false;
+    while(!ready)
+    {
+        ready = ps4_ros->waitForRelease();
+        ros::spinOnce();
+        ros::Duration(0.1).sleep();
+    }
+    ROS_INFO("Calibrated - Ready to use");
 
     ros::Rate loop_rate(10);
     while(ros::ok())
