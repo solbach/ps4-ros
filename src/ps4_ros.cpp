@@ -3,11 +3,6 @@
 #include <sensor_msgs/Joy.h>
 #include <geometry_msgs/Twist.h>
 
-const int maxVel = 1.0;
-const int maxVelR = -1.0;
-const std::string pubName = "/searchbot/p3at/vel_cmd";
-
-
 class PS4_ROS {
 
 public:
@@ -17,6 +12,12 @@ public:
      *
      */
     PS4_ROS(ros::NodeHandle &n) {
+        // get ros param
+        ros::NodeHandle private_nh("~");
+        private_nh.param("scale_linear", this->scale_linear, 1.0);
+        private_nh.param("scale_angular", this->scale_angular, 1.0);
+        private_nh.param<std::string>("pub_topic", this->pubName, "/searchbot/p3at/vel_cmd");
+
         this->chat = n.advertise<geometry_msgs::Twist>(pubName, 1000);
         this->sub = n.subscribe<sensor_msgs::Joy>("/joy", 10, &PS4_ROS::subscribePS4, this);
 
@@ -25,10 +26,10 @@ public:
         this->calib2 = 0;
         this->calib = false;
 
-        // get ros param
-        ros::NodeHandle private_nh("~");
-        private_nh.param("scale_linear", this->scale_linear, 1.0);
-        private_nh.param("scale_angular", this->scale_angular, 1.0);
+        this->maxVel = this->scale_linear;
+        this->maxVelR = this->scale_linear * -1;
+
+        ROS_INFO("maxVelR: %f", this->maxVelR);
 
         ROS_INFO("scale_linear set to: %f", this->scale_linear);
         ROS_INFO("scale_angular set to: %f", this->scale_angular);
@@ -56,7 +57,7 @@ public:
         this->send_r2 = this->scale_linear * this->send_r2;
 
         // Apply rosparam "scale_angular"
-        this->send_leftStickX = this->leftStickX / this->scale_angular;
+        this->send_leftStickX = this->scale_angular * this->leftStickX;
     }
 
     void publishTwistMsg() {
@@ -193,6 +194,9 @@ private:
 
     /* rosparams */
     double scale_linear, scale_angular;
+    std::string pubName;
+
+    double maxVel, maxVelR;
 
     /* send data */
     double send_leftStickX, send_l2, send_r2;

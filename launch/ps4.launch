@@ -12,8 +12,9 @@
 
 	<!-- PS4 ROS NODE -->
 	<node pkg="ps4_ros" type="ps4_ros" name="ps4" output="screen">
-	  	<param name="scale_linear" value="0.5"/>
-	  	<param name="scale_angular" value="1.0"/>
+	  	<param name="scale_linear" value="1.0"/>
+	  	<param name="scale_angular" value="0.5"/>
+	  	<param name="pub_topic" value="/searchbot/p3at/vel_cmd"/>
 	</node>
 
 </launch>
