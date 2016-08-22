@@ -20,6 +20,14 @@ public:
         this->chat = n.advertise<geometry_msgs::Twist>(pubName, 1000);
         this->sub = n.subscribe<sensor_msgs::Joy>("/joy", 10, &PS4_ROS::subscribePS4, this);
 
+        // get ros param
+        ros::NodeHandle private_nh("~");
+        private_nh.param("scale_linear", this->scale_linear, 1.0);
+        private_nh.param("scale_angular", this->scale_angular, 1.0);
+
+        ROS_INFO("scale_linear set to: %f", this->scale_linear);
+        ROS_INFO("scale_angular set to: %f", this->scale_angular);
+
         ROS_INFO("PS4_ROS initialized");
     }
 
@@ -33,10 +41,16 @@ public:
 
     void prepareData()
     {
+        // Normalize velocity between ]-1.0, 1.0[
         this->send_l2 = (-0.5 * this->l2) + 0.5;
         this->send_r2 = (this->r2 - 1.0) * 0.5;
 
-        this->send_leftStickX = this->leftStickX / 1.0;
+        // Apply rosparam "scale_linear"
+        this->send_l2 = this->scale_linear * this->send_l2;
+        this->send_r2 = this->scale_linear * this->send_r2;
+
+        // Apply rosparam "scale_angular"
+        this->send_leftStickX = this->leftStickX / this->scale_angular;
     }
 
     void publishTwistMsg() {
@@ -61,7 +75,7 @@ public:
             msg.angular.z = this->send_leftStickX;
         }
         else{
-            ROS_WARN("SENDING EMERGENCY STOP");
+            //ROS_WARN("SENDING EMERGENCY STOP");
 
             /* To Do */
         }
@@ -132,6 +146,9 @@ private:
     int arrowsX, arrowsY, buttonSq, buttonX, buttonO, buttonTr,
         buttonTouch, l1, r1;
 
+    /* rosparams */
+    double scale_linear, scale_angular;
+
     /* send data */
     double send_leftStickX, send_l2, send_r2;
 
@@ -146,6 +163,8 @@ int main(int argc, char **argv) {
 
     // create ps4_ros object
     PS4_ROS *ps4_ros = new PS4_ROS(n);
+
+    // calibrate
 
     ros::Rate loop_rate(10);
     while(ros::ok())

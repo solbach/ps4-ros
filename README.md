@@ -26,3 +26,7 @@ Sony PlayStation 4 DualShock®4 node joy_msg to twist_msg
   * ``<param name="scale_angular" value="1.5"/>``
 
   * ``<param name="scale_linear" value="0.5"/>``
+
+## useful hints
+* Display raw _ds4drv_ data
+  * `$sudo jstest /dev/input/jsX`

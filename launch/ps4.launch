@@ -1,17 +1,19 @@
 <launch>
 	
   	<!-- ds4drv -->
-  	<node name="ds4drv_script_call" pkg="ps4_ros" type="run_ds4drv.sh" />
+  	<node name="ds4drv_script_call" pkg="ps4_ros" type="run_ds4drv.sh" output="screen" />
 
   	<!-- JOY ROS NODE -->
-	<node pkg="joy" type="joy_node" name="joy">
-		<param name="joy_node/dev" value="/dev/input/js0"/>
-	</node>
+	<node respawn="true" pkg="joy" type="joy_node" name="ps4_joy" >
+    	<param name="dev" type="string" value="/dev/input/js0" />
+    	<param name="deadzone" value="0.12" />
+ 	</node>
+
 
 	<!-- PS4 ROS NODE -->
-	<node pkg="ps4_ros" type="ps4_ros" name="ps4">
-	  	<param name="scale_angular" value="1.5"/>
+	<node pkg="ps4_ros" type="ps4_ros" name="ps4" output="screen">
 	  	<param name="scale_linear" value="0.5"/>
+	  	<param name="scale_angular" value="1.0"/>
 	</node>
 
 </launch>
