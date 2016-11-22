@@ -27,6 +27,10 @@ Sony PlayStation 4 DualShock®4 node joy_msg to twist_msg
 
   * ``<param name="scale_linear" value="0.5"/>``
 
-## useful hints
+# Troubleshooting
+
 * Display raw _ds4drv_ data
   * `$sudo jstest /dev/input/jsX`
+  
+# To Do (v.2.0)
+* [ ] Different color schemes
